@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>HealthHub Login</title>
+  <style>
+    body {
+      margin: 0;
+      opacity: 0;
+      animation: fadeIn 2s forwards;
+      background-color: #E0FCFF;
+      font-family: Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    @keyframes fadeIn { to { opacity: 1; } }
+
+    .card {
+      background: #fff;
+      padding: 20px 22px;
+      border-radius: 10px;
+      width: 400px;
+      text-align: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,.3);
+    }
+    h2 { margin: 6px 0 12px; }
+
+    .logo {
+        height: auto;
+        width: 120px;
+        margin: 0 auto 8px;
+        justify-content: center;
+        object-fit: contain;
+        display: block;
+    }
+
+    /* Toggle Switch */
+    .role-switch {
+      display: inline-flex; 
+      align-items: center; 
+      gap: 12px; 
+      margin-bottom: 12px;
+    }
+    .track {
+      position: relative; 
+      width: 150px; 
+      height: 50px; 
+      background:#e6f4ff;
+      border: 1px solid #cfe6fb; 
+      border-radius: 999px; 
+      box-shadow: inset 0 1px 2px rgba(0,0,0,.06);
+    }
+    .thumb {
+      position: absolute; 
+      top: 4px; 
+      left: 4px; 
+      width: 60px; 
+      height: 42px;
+      background: #002A99; 
+      border-radius: 999px; 
+      box-shadow: 0 3px 10px rgba(0,0,0,.15);
+      transition: transform .2s ease;
+    }
+    .role-label {
+      position: absolute; 
+      inset: 0; 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between;
+      padding: 0 12px; 
+      font-weight: bold; 
+      font-size: 14px; 
+      color: #9799A1; 
+      user-select: none;
+    }
+
+    input[type="checkbox"].switch { 
+      position: absolute; 
+      opacity: 0; 
+      pointer-events: none; 
+    }
+    input.switch:checked + .track .thumb { 
+      transform: translateX(83px); 
+    }
+
+    .field { 
+      text-align: left; 
+      margin: 10px 0; 
+    }
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: #555;
+      margin-bottom: 6px;
+    }
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    ::placeholder { color: #9aa3ad; }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      background-color: #002999;
+      color: white;
+      font-weight: bold;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 6px;
+    }
+    button:hover { background-color: #0056b3; }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <img src="images/healthhublogo.png" alt="HealthHub logo" class="logo">
+    <h2>Welcome to HealthHub</h2>
+
+    <!-- Role toggle -->
+    <label class="role-switch">
+      <input id="roleToggle" class="switch" type="checkbox">
+      <span class="track">
+        <span class="thumb"></span>
+        <span class="role-label"><span>Admin</span><span>Patient</span></span>
+      </span>
+    </label>
+
+    <!-- LOGIN FORM -->
+    <form id="loginForm">
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" type="email" placeholder="you@example.com" required>
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" type="password" placeholder="••••••••" required>
+      </div>
+
+      <button type="submit">Login</button>
+    </form>
+  </div>
+
+  <!-- JS LOGIN HANDLER -->
+  <script>
+    const loginForm = document.getElementById("loginForm");
+    const roleToggle = document.getElementById("roleToggle");
+
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      const role = roleToggle.checked ? "patient" : "doctor";
+
+      const response = await fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, role })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+  // role from backend will be "PATIENT" or "DOCTOR"
+  if (result.role === "PATIENT") {
+    window.location.href = "patient_dashboard.html";
+  } else if (result.role === "DOCTOR") {
+    window.location.href = "doctor_dashboard.html";
+  } else {
+    alert("Login succeeded but role was weird: " + result.role);
+  }
+} else {
+  alert("Login failed: " + result.message);
+}
+
+    });
+  </script>
+
+</body>
+</html>

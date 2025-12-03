@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>HealthHub – Doctor Dashboard</title>
+  <style>
+    body {
+      margin: 0;
+      opacity: 0;
+      animation: fadeIn 2s forwards;
+      background-color: #E0FCFF;
+      font-family: Arial, sans-serif;
+    }
+    @keyframes fadeIn { to { opacity: 1; } }
+
+    .banner {
+      width: 100%;
+      height: 85px;
+      top: 35px;
+      background: white;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      display: flex;
+      position: fixed;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      color: #007BFF;
+      z-index: 1000;
+    }
+
+    .banner2 {
+      width: 100%;
+      height: 40px;
+      top: 0;
+      background: #E0FCFF;
+      position: fixed;
+      border-radius: 0;
+      z-index: 900;
+    }
+
+    .logo {
+      width: 70px;
+      position: fixed;
+      top: 43px;
+      left: 50px;
+    }
+
+    .home_button {
+      width: 110px;
+      height: 40px;
+      padding: 10px;
+      border: 1px solid white;
+      position: fixed;
+      top: 0;
+      left: 50px;
+      background-color: white;
+      color: #002999;
+      cursor: pointer;
+      font-size: 12.5px;
+      font-family: 'Times New Roman', Times, serif;
+      z-index: 1001;
+    }
+
+    .home_button::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 4px;
+      width: 100%;
+      background-color: #002999;
+      transform: scaleX(1);
+      transform-origin: left;
+    }
+    .logout-btn {
+      position: fixed;
+      top: 0;
+      right: 40px;
+      margin-top: 2px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: none;
+      background: #002999;
+      color: white;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .content {
+      padding-top: 150px;
+      padding-left: 30px;
+      padding-right: 30px;
+    }
+
+    .cards-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      padding: 0;
+      overflow: hidden;
+      font-family: 'Times New Roman', Times, serif;
+    }
+
+    .card-header {
+      background: #002999;
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      padding: 12px 16px;
+    }
+
+    .card-body {
+      padding: 16px;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .card.half { width: 48%; min-width: 360px; }
+
+    .list {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+    }
+
+    .list-item {
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .list-item:last-child {
+      border-bottom: none;
+    }
+
+    .appt-title {
+      font-weight: bold;
+      color: #002999;
+    }
+  </style>
+</head>
+<body>
+  <div class="banner">
+    <img src="images/healthhublogo.png" alt="HealthHub logo" class="logo">
+  </div>
+  <button type="button" class="home_button">HealthHub</button>
+  <button class="logout-btn" id="logoutBtn">Logout</button>
+
+  <div class="content">
+    <div class="cards-row">
+      <div class="card half">
+        <div class="card-header">Upcoming Schedule</div>
+        <div class="card-body">
+          <ul class="list" id="docApptList">
+            <li>Loading schedule...</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card half">
+        <div class="card-header">My Patients</div>
+        <div class="card-body">
+          <ul class="list" id="docPatientList">
+            <li>Loading patients...</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function loadDoctorDashboard() {
+      try {
+        const res = await fetch("/api/doctor/dashboard");
+        const data = await res.json();
+
+        const apptList = document.getElementById("docApptList");
+        const patientList = document.getElementById("docPatientList");
+
+        if (!data.success) {
+          apptList.innerHTML = "<li>Could not load schedule.</li>";
+          patientList.innerHTML = "<li>Could not load patients.</li>";
+          return;
+        }
+
+        // Appointments
+        const appts = data.appointments || [];
+        if (appts.length === 0) {
+          apptList.innerHTML = "<li>No upcoming appointments.</li>";
+        } else {
+          apptList.innerHTML = "";
+          appts.forEach(a => {
+            const li = document.createElement("li");
+            li.className = "list-item";
+            li.innerHTML = `
+              <div class="appt-title">${a.ReasonForVisit} – ${a.ApptStatus}</div>
+              <div>${a.AppointmentDate} at ${a.StartTime}</div>
+              <div>Patient: ${a.PatientName}</div>
+            `;
+            apptList.appendChild(li);
+          });
+        }
+
+        // Patients
+        const pts = data.patients || [];
+        if (pts.length === 0) {
+          patientList.innerHTML = "<li>No patients found.</li>";
+        } else {
+          patientList.innerHTML = "";
+          pts.forEach(p => {
+            const li = document.createElement("li");
+            li.className = "list-item";
+            li.innerHTML = `
+              <div><strong>${p.PatientName}</strong></div>
+              <div>Age: ${p.Age || "?"} • Gender: ${p.Gender || "?"}</div>
+            `;
+            patientList.appendChild(li);
+          });
+        }
+
+      } catch (err) {
+        console.error(err);
+        document.getElementById("docApptList").innerHTML =
+          "<li>Error loading schedule.</li>";
+        document.getElementById("docPatientList").innerHTML =
+          "<li>Error loading patients.</li>";
+      }
+    }
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      await fetch("/logout", { method: "POST" });
+      window.location.href = "login.html";
+    });
+
+    loadDoctorDashboard();
+  </script>
+</body>
+</html>

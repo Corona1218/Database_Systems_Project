@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>HealthHub – Patient Dashboard</title>
+  <style>
+    body {
+      margin: 0;
+      opacity: 0;
+      animation: fadeIn 2s forwards;
+      background-color: #E0FCFF;
+      font-family: Arial, sans-serif;
+    }
+    @keyframes fadeIn { to { opacity: 1; } }
+
+    .banner {
+      width: 100%;
+      height: 85px;
+      top: 35px;
+      background: white;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      display: flex;
+      position: fixed;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      color: #007BFF;
+      z-index: 1000;
+    }
+
+    .banner2 {
+      width: 100%;
+      height: 40px;
+      top: 0;
+      background: #E0FCFF;
+      position: fixed;
+      border-radius: 0;
+      z-index: 900;
+    }
+
+    .logo {
+      width: 70px;
+      position: fixed;
+      top: 43px;
+      left: 50px;
+    }
+
+    .home_button {
+      width: 110px;
+      height: 40px;
+      padding: 10px;
+      border: 1px solid white;
+      position: fixed;
+      top: 0;
+      left: 50px;
+      background-color: white;
+      color: #002999;
+      cursor: pointer;
+      font-size: 12.5px;
+      font-family: 'Times New Roman', Times, serif;
+      z-index: 1001;
+    }
+
+    .home_button::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 4px;
+      width: 100%;
+      background-color: #002999;
+      transform: scaleX(1);
+      transform-origin: left;
+    }
+    .logout-btn {
+      position: fixed;
+      top: 0;
+      right: 40px;
+      margin-top: 2px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: none;
+      background: #002999;
+      color: white;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .content {
+      padding-top: 150px;
+      padding-left: 30px;
+      padding-right: 30px;
+    }
+
+    .cards-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      padding: 0;
+      overflow: hidden;
+      font-family: 'Times New Roman', Times, serif;
+    }
+
+    .card-header {
+      background: #002999;
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      padding: 12px 16px;
+    }
+
+    .card-body {
+      padding: 16px;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .card.small { width: 320px; }
+    .card.large { width: 800px; }
+
+    .pill-warning {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #ffe4e4;
+      color: #b30000;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .pill-ok {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #e2fbe2;
+      color: #136f2d;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .appt-list {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+    }
+
+    .appt-item {
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .appt-item:last-child {
+      border-bottom: none;
+    }
+
+    .appt-title {
+      font-weight: bold;
+      color: #002999;
+    }
+
+    
+  </style>
+</head>
+<body>
+  <div class="banner">
+    <img src="images/healthhublogo.png" alt="HealthHub logo" class="logo">
+  </div>
+  
+  
+  <button type="button" class="home_button">HealthHub</button>
+  <button class="logout-btn" id="logoutBtn">Logout</button>
+
+  <div class="content">
+    <div class="cards-row">
+      <!-- Left: Allergy + basic info -->
+      <div class="card small">
+        <div class="card-header">Your Profile</div>
+        <div class="card-body" id="patientInfo">
+          Loading your info...
+        </div>
+      </div>
+
+      <!-- Right: Upcoming appointments -->
+      <div class="card large">
+        <div class="card-header">Upcoming & Recent Appointments</div>
+        <div class="card-body">
+          <ul class="appt-list" id="apptList">
+            <li>Loading appointments...</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function loadPatientDashboard() {
+      try {
+        const res = await fetch("/api/patient/dashboard");
+        const data = await res.json();
+
+        if (!data.success) {
+          document.getElementById("patientInfo").textContent =
+            data.message || "Could not load your info.";
+          document.getElementById("apptList").innerHTML =
+            "<li>Could not load appointments.</li>";
+          return;
+        }
+
+        const p = data.patient;
+        const allergies = data.allergies || [];
+        const appts = data.appointments || [];
+
+        // Profile + allergy section
+        const infoDiv = document.getElementById("patientInfo");
+        let allergyBlock = "";
+
+        if (allergies.length > 0) {
+          const severe = allergies.filter(a => a.Severity === "Severe");
+          const hasFlag = allergies.some(a => a.AllergyFlag && a.AllergyFlag.toUpperCase() === "YES");
+          const pillClass = hasFlag || severe.length > 0 ? "pill-warning" : "pill-ok";
+          const pillText = hasFlag || severe.length > 0 ? "Allergy Alert" : "No critical allergies";
+
+          allergyBlock += `<div class="${pillClass}">${pillText}</div><br>`;
+          allergyBlock += "<ul>";
+          allergies.forEach(a => {
+            allergyBlock += `<li><strong>${a.AllergyName}</strong> (${a.Severity}) – ${a.AllergyNotes || ""}</li>`;
+          });
+          allergyBlock += "</ul>";
+        } else {
+          allergyBlock = `<div class="pill-ok">No allergies on file</div>`;
+        }
+
+        infoDiv.innerHTML = `
+          <p><strong>Name:</strong> ${p ? p.PatientName : "Unknown"}</p>
+          <p><strong>Age:</strong> ${p ? p.Age : "?"}</p>
+          <p><strong>Gender:</strong> ${p ? p.Gender : "?"}</p>
+          <p><strong>Insurance:</strong> ${p ? p.Insurance : "Not listed"}</p>
+          <hr>
+          <p><strong>Allergies:</strong></p>
+          ${allergyBlock}
+        `;
+
+        // Appointments list
+        const apptList = document.getElementById("apptList");
+        if (appts.length === 0) {
+          apptList.innerHTML = "<li>No appointments to show.</li>";
+        } else {
+          apptList.innerHTML = "";
+          appts.forEach(a => {
+            const li = document.createElement("li");
+            li.className = "appt-item";
+            li.innerHTML = `
+              <div class="appt-title">${a.ReasonForVisit} – ${a.ApptStatus}</div>
+              <div>${a.AppointmentDate} at ${a.StartTime}</div>
+              <div>Doctor: ${a.DoctorName}</div>
+            `;
+            apptList.appendChild(li);
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById("patientInfo").textContent =
+          "Error loading dashboard.";
+      }
+    }
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      await fetch("/logout", { method: "POST" });
+      window.location.href = "login.html";
+    });
+
+    loadPatientDashboard();
+  </script>
+</body>
+</html>
